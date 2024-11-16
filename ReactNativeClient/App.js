@@ -7,37 +7,22 @@
  */
 
 import React from 'react';
-import IssueList from './IssueList.js';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import IssueList from './IssueList';
+import { ScrollView, Text, View } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-
-
-export default class App extends React.Component
-{
-  render()
-  {
-    return(
-    <>
-      <Text>Issue Tracker</Text>
-      <IssueList/>
-    </>);
-
+export default class App extends React.Component {
+  render() {
+    return (
+      <>
+        <ScrollView>
+          <View style={{ padding: 20 }}>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>
+              Issue Tracker
+            </Text>
+            <IssueList />
+          </View>
+        </ScrollView>
+      </>
+    );
   }
 }
