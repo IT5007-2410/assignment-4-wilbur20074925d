@@ -6,22 +6,47 @@
  * @flow strict-local
  */
 
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ * @flow strict-local
+ */
+
 import React from 'react';
 import IssueList from './IssueList.js';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import type {Node} from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 
-export default class App extends React.Component {
-  render() {
-    return (
-      // Q1: Start Coding here
-      <SafeAreaView style={styles.container}>
-        <View style={styles.navBar}>
-          <Text style={styles.navText}>Issue Tracker</Text>
-        </View>
-        <IssueList />
-      </SafeAreaView>
-      // Q1: Code Ends here
-    );
+import {
+  Colors,
+  DebugInstructions,
+  Header,
+  LearnMoreLinks,
+  ReloadInstructions,
+} from 'react-native/Libraries/NewAppScreen';
+
+
+
+export default class App extends React.Component
+{
+  render()
+  {
+    return(
+    <>
+      <Text>Issue Tracker</Text>
+      <IssueList/>
+    </>);
+
   }
 }
 
