@@ -1,11 +1,11 @@
 import React from 'react';
 import {
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   Button,
   View,
-  StyleSheet,
 } from 'react-native';
 import { Table, Row } from 'react-native-table-component';
 
@@ -46,23 +46,39 @@ async function graphQLFetch(query, variables = {}) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   header: { height: 50, backgroundColor: '#537791' },
-  text: { textAlign: 'center', color: '#fff' },
-  dataWrapper: { marginTop: -1 },
+  text: { textAlign: 'center', fontWeight: '500' },
   row: { height: 40, backgroundColor: '#E7E6E1' },
-  input: { borderColor: '#ccc', borderWidth: 1, padding: 8, margin: 8 },
+  input: { borderColor: '#cccccc', borderWidth: 1, marginBottom: 10, padding: 8 },
 });
 
-// Components
+// Q1: Issue Filter Component
 class IssueFilter extends React.Component {
+  constructor() {
+    super();
+    this.state = { filterText: '' };
+  }
+
+  handleChange = (text) => {
+    this.setState({ filterText: text });
+    this.props.onFilterChange(text);
+  };
+
   render() {
     return (
-      <View style={{ padding: 10 }}>
-        <Text>Issue Filter Placeholder</Text>
+      <View style={{ marginBottom: 10 }}>
+        <Text>Filter Issues by Owner:</Text>
+        <TextInput
+          placeholder="Enter owner name"
+          value={this.state.filterText}
+          onChangeText={this.handleChange}
+          style={styles.input}
+        />
       </View>
     );
   }
 }
 
+// Q2: Issue Table Component
 function IssueRow(props) {
   const issue = props.issue;
   const rowData = [
@@ -76,11 +92,7 @@ function IssueRow(props) {
   ];
 
   return (
-    <Row
-      data={rowData}
-      style={styles.row}
-      textStyle={{ textAlign: 'center' }}
-    />
+    <Row data={rowData} style={styles.row} textStyle={styles.text} />
   );
 }
 
@@ -93,58 +105,56 @@ function IssueTable(props) {
 
   return (
     <View style={styles.container}>
-      <Table borderStyle={{ borderWidth: 1 }}>
+      <Table>
         <Row data={tableHead} style={styles.header} textStyle={styles.text} />
-        {issueRows}
+        <ScrollView>{issueRows}</ScrollView>
       </Table>
     </View>
   );
 }
 
+// Q3: Issue Add Component
 class IssueAdd extends React.Component {
   constructor() {
     super();
     this.state = { title: '', owner: '', effort: '' };
-    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleChange(field, value) {
-    this.setState({ [field]: value });
-  }
+  handleTitleChange = (title) => this.setState({ title });
+  handleOwnerChange = (owner) => this.setState({ owner });
+  handleEffortChange = (effort) => this.setState({ effort });
 
-  handleSubmit() {
-    const { title, owner, effort } = this.state;
+  handleSubmit = () => {
     const issue = {
-      title,
-      owner,
-      effort: parseInt(effort, 10),
-      created: new Date(),
+      title: this.state.title,
+      owner: this.state.owner,
+      effort: parseInt(this.state.effort, 10),
     };
     this.props.createIssue(issue);
     this.setState({ title: '', owner: '', effort: '' });
-  }
+  };
 
   render() {
     return (
       <View>
         <TextInput
           placeholder="Title"
-          style={styles.input}
           value={this.state.title}
-          onChangeText={(value) => this.handleChange('title', value)}
+          onChangeText={this.handleTitleChange}
+          style={styles.input}
         />
         <TextInput
           placeholder="Owner"
-          style={styles.input}
           value={this.state.owner}
-          onChangeText={(value) => this.handleChange('owner', value)}
+          onChangeText={this.handleOwnerChange}
+          style={styles.input}
         />
         <TextInput
           placeholder="Effort"
+          value={this.state.effort}
+          onChangeText={this.handleEffortChange}
           keyboardType="numeric"
           style={styles.input}
-          value={this.state.effort}
-          onChangeText={(value) => this.handleChange('effort', value)}
         />
         <Button title="Add Issue" onPress={this.handleSubmit} />
       </View>
@@ -152,28 +162,21 @@ class IssueAdd extends React.Component {
   }
 }
 
+// Q4: Blacklist Component
 class BlackList extends React.Component {
   constructor() {
     super();
     this.state = { owner: '' };
-    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleChange(value) {
-    this.setState({ owner: value });
-  }
+  handleOwnerChange = (owner) => this.setState({ owner });
 
   async handleSubmit() {
-    const { owner } = this.state;
-    const query = `
-      mutation addToBlacklist($owner: String!) {
-        addToBlacklist(owner: $owner) {
-          id
-        }
-      }
-    `;
-    await graphQLFetch(query, { owner });
-    alert(`${owner} added to blacklist`);
+    const query = `mutation addToBlackList($owner: String!) {
+      addToBlackList(owner: $owner)
+    }`;
+    const variables = { owner: this.state.owner };
+    await graphQLFetch(query, variables);
     this.setState({ owner: '' });
   }
 
@@ -181,22 +184,22 @@ class BlackList extends React.Component {
     return (
       <View>
         <TextInput
-          placeholder="Owner"
-          style={styles.input}
+          placeholder="Owner to Blacklist"
           value={this.state.owner}
-          onChangeText={(value) => this.handleChange(value)}
+          onChangeText={this.handleOwnerChange}
+          style={styles.input}
         />
-        <Button title="Add to Blacklist" onPress={this.handleSubmit} />
+        <Button title="Add to Blacklist" onPress={() => this.handleSubmit()} />
       </View>
     );
   }
 }
 
+// Q2 and Q3 integration in IssueList Component
 export default class IssueList extends React.Component {
   constructor() {
     super();
-    this.state = { issues: [] };
-    this.createIssue = this.createIssue.bind(this);
+    this.state = { issues: [], allIssues: [] };
   }
 
   componentDidMount() {
@@ -206,12 +209,14 @@ export default class IssueList extends React.Component {
   async loadData() {
     const query = `query {
       issueList {
-        id title status owner created effort due
+        id title status owner
+        created effort due
       }
     }`;
+
     const data = await graphQLFetch(query);
     if (data) {
-      this.setState({ issues: data.issueList });
+      this.setState({ issues: data.issueList, allIssues: data.issueList });
     }
   }
 
@@ -221,18 +226,26 @@ export default class IssueList extends React.Component {
         id
       }
     }`;
+
     const data = await graphQLFetch(query, { issue });
     if (data) {
       this.loadData();
     }
   }
 
+  handleFilterChange = (filterText) => {
+    const filteredIssues = this.state.allIssues.filter((issue) =>
+      issue.owner.toLowerCase().includes(filterText.toLowerCase())
+    );
+    this.setState({ issues: filteredIssues });
+  };
+
   render() {
     return (
       <ScrollView>
-        <IssueFilter />
+        <IssueFilter onFilterChange={this.handleFilterChange} />
         <IssueTable issues={this.state.issues} />
-        <IssueAdd createIssue={this.createIssue} />
+        <IssueAdd createIssue={(issue) => this.createIssue(issue)} />
         <BlackList />
       </ScrollView>
     );
